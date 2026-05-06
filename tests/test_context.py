@@ -127,5 +127,403 @@ class TestPartialNNF(unittest.TestCase):
         self.assertEqual(result_context, ctx.Hole())
 
 
+class TestToString(unittest.TestCase):
+    def test_hole(self) -> None:
+        self.assertEqual(str(ctx.Hole()), "[-]")
+
+    def test_not(self) -> None:
+        self.assertEqual(str(ctx.Not(ctx.Hole())), "!([-])")
+
+    def test_and_left(self) -> None:
+        self.assertEqual(
+            str(ctx.AndLeft(ctx.Hole(), mtl.Prop("b"))),
+            "([-] & b)",
+        )
+
+    def test_and_right(self) -> None:
+        self.assertEqual(
+            str(ctx.AndRight(mtl.Prop("a"), ctx.Hole())),
+            "(a & [-])",
+        )
+
+    def test_or_left(self) -> None:
+        self.assertEqual(
+            str(ctx.OrLeft(ctx.Hole(), mtl.Prop("b"))),
+            "([-] | b)",
+        )
+
+    def test_or_right(self) -> None:
+        self.assertEqual(
+            str(ctx.OrRight(mtl.Prop("a"), ctx.Hole())),
+            "(a | [-])",
+        )
+
+    def test_implies_left(self) -> None:
+        self.assertEqual(
+            str(ctx.ImpliesLeft(ctx.Hole(), mtl.Prop("b"))),
+            "([-] -> b)",
+        )
+
+    def test_implies_right(self) -> None:
+        self.assertEqual(
+            str(ctx.ImpliesRight(mtl.Prop("a"), ctx.Hole())),
+            "(a -> [-])",
+        )
+
+    def test_eventually(self) -> None:
+        self.assertEqual(
+            str(ctx.Eventually(ctx.Hole(), (1, 3))),
+            "F[1, 3] ([-])",
+        )
+
+    def test_always_default_interval(self) -> None:
+        # (0, None) with low=0 renders as empty string via fmt_interval
+        self.assertEqual(str(ctx.Always(ctx.Hole(), (0, None))), "G ([-])")
+
+    def test_always_bounded(self) -> None:
+        self.assertEqual(str(ctx.Always(ctx.Hole(), (1, 5))), "G[1, 5] ([-])")
+
+    def test_until_left(self) -> None:
+        self.assertEqual(
+            str(ctx.UntilLeft(ctx.Hole(), mtl.Prop("b"), (0, 5))),
+            "([-] U[0, 5] b)",
+        )
+
+    def test_until_right(self) -> None:
+        self.assertEqual(
+            str(ctx.UntilRight(mtl.Prop("a"), ctx.Hole(), (0, 5))),
+            "(a U[0, 5] [-])",
+        )
+
+    def test_release_left(self) -> None:
+        self.assertEqual(
+            str(ctx.ReleaseLeft(ctx.Hole(), mtl.Prop("b"), (1, 4))),
+            "([-] R[1, 4] b)",
+        )
+
+    def test_release_right(self) -> None:
+        self.assertEqual(
+            str(ctx.ReleaseRight(mtl.Prop("a"), ctx.Hole(), (1, 4))),
+            "(a R[1, 4] [-])",
+        )
+
+    def test_next(self) -> None:
+        self.assertEqual(str(ctx.Next(ctx.Hole())), "X ([-])")
+
+    def test_repr_matches_str(self) -> None:
+        c = ctx.AndLeft(ctx.Not(ctx.Hole()), mtl.Prop("b"))
+        self.assertEqual(repr(c), str(c))
+
+    def test_nested(self) -> None:
+        c = ctx.Always(ctx.OrLeft(ctx.Hole(), mtl.Prop("q")), (0, 2))
+        self.assertEqual(str(c), "G[0, 2] (([-] | q))")
+
+
+class TestSubstituteAdditional(unittest.TestCase):
+    """Cover substitute branches not exercised by TestSplitFormula."""
+
+    def test_or_left(self) -> None:
+        f = mtl.Prop("x")
+        result = ctx.substitute(ctx.OrLeft(ctx.Hole(), mtl.Prop("b")), f)
+        self.assertEqual(result, mtl.Or(f, mtl.Prop("b")))
+
+    def test_implies_left(self) -> None:
+        f = mtl.Prop("x")
+        result = ctx.substitute(ctx.ImpliesLeft(ctx.Hole(), mtl.Prop("b")), f)
+        self.assertEqual(result, mtl.Implies(f, mtl.Prop("b")))
+
+    def test_implies_right(self) -> None:
+        f = mtl.Prop("x")
+        result = ctx.substitute(ctx.ImpliesRight(mtl.Prop("a"), ctx.Hole()), f)
+        self.assertEqual(result, mtl.Implies(mtl.Prop("a"), f))
+
+    def test_next(self) -> None:
+        f = mtl.Prop("x")
+        result = ctx.substitute(ctx.Next(ctx.Hole()), f)
+        self.assertEqual(result, mtl.Next(f))
+
+    def test_always(self) -> None:
+        f = mtl.Prop("x")
+        result = ctx.substitute(ctx.Always(ctx.Hole(), (0, 3)), f)
+        self.assertEqual(result, mtl.Always(f, (0, 3)))
+
+    def test_release_left(self) -> None:
+        f = mtl.Prop("x")
+        result = ctx.substitute(
+            ctx.ReleaseLeft(ctx.Hole(), mtl.Prop("b"), (0, 2)),
+            f,
+        )
+        self.assertEqual(result, mtl.Release(f, mtl.Prop("b"), (0, 2)))
+
+    def test_release_right(self) -> None:
+        f = mtl.Prop("x")
+        result = ctx.substitute(
+            ctx.ReleaseRight(mtl.Prop("a"), ctx.Hole(), (0, 2)),
+            f,
+        )
+        self.assertEqual(result, mtl.Release(mtl.Prop("a"), f, (0, 2)))
+
+
+class TestSplitFormulaAdditional(unittest.TestCase):
+    """Cover split_formula branches not exercised by TestSplitFormula."""
+
+    def test_implies_left(self) -> None:
+        formula = parser.parse_mtl("(F a) -> G b")
+        result_ctx, result_subf = ctx.split_formula(formula, [0])
+        self.assertIsInstance(result_ctx, ctx.ImpliesLeft)
+        self.assertIsInstance(result_subf, mtl.Eventually)
+
+    def test_implies_right(self) -> None:
+        formula = parser.parse_mtl("G a -> (F b)")
+        result_ctx, result_subf = ctx.split_formula(formula, [1])
+        self.assertIsInstance(result_ctx, ctx.ImpliesRight)
+        self.assertIsInstance(result_subf, mtl.Eventually)
+
+    def test_release_left(self) -> None:
+        formula = parser.parse_mtl("(F a) R[0,3] b")
+        result_ctx, result_subf = ctx.split_formula(formula, [0])
+        self.assertIsInstance(result_ctx, ctx.ReleaseLeft)
+        self.assertIsInstance(result_subf, mtl.Eventually)
+
+    def test_release_right(self) -> None:
+        formula = parser.parse_mtl("a R[0,3] (G b)")
+        result_ctx, result_subf = ctx.split_formula(formula, [1])
+        self.assertIsInstance(result_ctx, ctx.ReleaseRight)
+        self.assertIsInstance(result_subf, mtl.Always)
+
+    def test_or_left(self) -> None:
+        formula = parser.parse_mtl("(F a) | G b")
+        result_ctx, result_subf = ctx.split_formula(formula, [0])
+        self.assertIsInstance(result_ctx, ctx.OrLeft)
+        self.assertIsInstance(result_subf, mtl.Eventually)
+
+    def test_index_into_prop_raises(self) -> None:
+        formula = parser.parse_mtl("a")
+        with self.assertRaises(mtl.DeBruijnIndexError):
+            ctx.split_formula(formula, [0])
+
+    def test_not_wrong_index_raises(self) -> None:
+        formula = parser.parse_mtl("! F a")
+        with self.assertRaises(mtl.DeBruijnIndexError):
+            ctx.split_formula(formula, [1])
+
+    def test_and_invalid_index_raises(self) -> None:
+        formula = parser.parse_mtl("F a & G b")
+        with self.assertRaises(mtl.DeBruijnIndexError):
+            ctx.split_formula(formula, [2])
+
+    def test_eventually_wrong_index_raises(self) -> None:
+        formula = parser.parse_mtl("F a")
+        with self.assertRaises(mtl.DeBruijnIndexError):
+            ctx.split_formula(formula, [1])
+
+    def test_always_wrong_index_raises(self) -> None:
+        formula = parser.parse_mtl("G a")
+        with self.assertRaises(mtl.DeBruijnIndexError):
+            ctx.split_formula(formula, [1])
+
+    def test_until_wrong_index_raises(self) -> None:
+        formula = parser.parse_mtl("a U b")
+        with self.assertRaises(mtl.DeBruijnIndexError):
+            ctx.split_formula(formula, [2])
+
+    def test_release_wrong_index_raises(self) -> None:
+        formula = parser.parse_mtl("a R b")
+        with self.assertRaises(mtl.DeBruijnIndexError):
+            ctx.split_formula(formula, [2])
+
+
+class TestPartialNNFCtxAdditional(unittest.TestCase):
+    """Cover partial_nnf_ctx branches for Right-variant and additional contexts."""
+
+    def test_and_right(self) -> None:
+        c = ctx.AndRight(mtl.Prop("a"), ctx.Hole())
+        result, polarity = ctx.partial_nnf_ctx(c)
+        self.assertEqual(result, ctx.AndRight(mtl.Prop("a"), ctx.Hole()))
+        self.assertTrue(polarity)
+
+    def test_or_right(self) -> None:
+        c = ctx.OrRight(mtl.Prop("a"), ctx.Hole())
+        result, polarity = ctx.partial_nnf_ctx(c)
+        self.assertEqual(result, ctx.OrRight(mtl.Prop("a"), ctx.Hole()))
+        self.assertTrue(polarity)
+
+    def test_implies_right_becomes_or_right(self) -> None:
+        c = ctx.ImpliesRight(mtl.Prop("a"), ctx.Hole())
+        result, polarity = ctx.partial_nnf_ctx(c)
+        self.assertEqual(
+            result,
+            ctx.OrRight(mtl.Not(mtl.Prop("a")), ctx.Hole()),
+        )
+        self.assertTrue(polarity)
+
+    def test_until_right(self) -> None:
+        c = ctx.UntilRight(mtl.Prop("a"), ctx.Hole(), (0, 3))
+        result, polarity = ctx.partial_nnf_ctx(c)
+        self.assertEqual(
+            result,
+            ctx.UntilRight(mtl.Prop("a"), ctx.Hole(), (0, 3)),
+        )
+        self.assertTrue(polarity)
+
+    def test_release_left(self) -> None:
+        c = ctx.ReleaseLeft(ctx.Hole(), mtl.Prop("b"), (0, 3))
+        result, polarity = ctx.partial_nnf_ctx(c)
+        self.assertEqual(
+            result,
+            ctx.ReleaseLeft(ctx.Hole(), mtl.Prop("b"), (0, 3)),
+        )
+        self.assertTrue(polarity)
+
+    def test_release_right(self) -> None:
+        c = ctx.ReleaseRight(mtl.Prop("a"), ctx.Hole(), (0, 3))
+        result, polarity = ctx.partial_nnf_ctx(c)
+        self.assertEqual(
+            result,
+            ctx.ReleaseRight(mtl.Prop("a"), ctx.Hole(), (0, 3)),
+        )
+        self.assertTrue(polarity)
+
+    def test_next(self) -> None:
+        c = ctx.Next(ctx.Hole())
+        result, polarity = ctx.partial_nnf_ctx(c)
+        self.assertEqual(result, ctx.Next(ctx.Hole()))
+        self.assertTrue(polarity)
+
+    def test_eventually(self) -> None:
+        c = ctx.Eventually(ctx.Hole(), (1, 5))
+        result, polarity = ctx.partial_nnf_ctx(c)
+        self.assertEqual(result, ctx.Eventually(ctx.Hole(), (1, 5)))
+        self.assertTrue(polarity)
+
+    def test_always(self) -> None:
+        c = ctx.Always(ctx.Hole(), (0, 2))
+        result, polarity = ctx.partial_nnf_ctx(c)
+        self.assertEqual(result, ctx.Always(ctx.Hole(), (0, 2)))
+        self.assertTrue(polarity)
+
+
+class TestPartialNNFCtxNegRightVariants(unittest.TestCase):
+    """Cover _partial_nnf_ctx_neg for Right-variant contexts via Not wrapping."""
+
+    def test_not_and_right(self) -> None:
+        c = ctx.Not(ctx.AndRight(mtl.Prop("a"), ctx.Hole()))
+        result, polarity = ctx.partial_nnf_ctx(c)
+        self.assertEqual(
+            result,
+            ctx.OrRight(mtl.Not(mtl.Prop("a")), ctx.Hole()),
+        )
+        self.assertFalse(polarity)
+
+    def test_not_or_right(self) -> None:
+        c = ctx.Not(ctx.OrRight(mtl.Prop("a"), ctx.Hole()))
+        result, polarity = ctx.partial_nnf_ctx(c)
+        self.assertEqual(
+            result,
+            ctx.AndRight(mtl.Not(mtl.Prop("a")), ctx.Hole()),
+        )
+        self.assertFalse(polarity)
+
+    def test_not_implies_right(self) -> None:
+        c = ctx.Not(ctx.ImpliesRight(mtl.Prop("a"), ctx.Hole()))
+        result, polarity = ctx.partial_nnf_ctx(c)
+        self.assertEqual(result, ctx.AndRight(mtl.Prop("a"), ctx.Hole()))
+        self.assertFalse(polarity)
+
+    def test_not_until_right(self) -> None:
+        c = ctx.Not(ctx.UntilRight(mtl.Prop("a"), ctx.Hole(), (0, 3)))
+        result, polarity = ctx.partial_nnf_ctx(c)
+        self.assertEqual(
+            result,
+            ctx.ReleaseRight(mtl.Not(mtl.Prop("a")), ctx.Hole(), (0, 3)),
+        )
+        self.assertFalse(polarity)
+
+    def test_not_release_left(self) -> None:
+        c = ctx.Not(ctx.ReleaseLeft(ctx.Hole(), mtl.Prop("b"), (0, 3)))
+        result, polarity = ctx.partial_nnf_ctx(c)
+        self.assertEqual(
+            result,
+            ctx.UntilLeft(ctx.Hole(), mtl.Not(mtl.Prop("b")), (0, 3)),
+        )
+        self.assertFalse(polarity)
+
+    def test_not_release_right(self) -> None:
+        c = ctx.Not(ctx.ReleaseRight(mtl.Prop("a"), ctx.Hole(), (0, 3)))
+        result, polarity = ctx.partial_nnf_ctx(c)
+        self.assertEqual(
+            result,
+            ctx.UntilRight(mtl.Not(mtl.Prop("a")), ctx.Hole(), (0, 3)),
+        )
+        self.assertFalse(polarity)
+
+    def test_not_next(self) -> None:
+        c = ctx.Not(ctx.Next(ctx.Hole()))
+        result, polarity = ctx.partial_nnf_ctx(c)
+        self.assertEqual(result, ctx.Next(ctx.Hole()))
+        self.assertFalse(polarity)
+
+    def test_not_eventually_becomes_always(self) -> None:
+        c = ctx.Not(ctx.Eventually(ctx.Hole(), (1, 5)))
+        result, polarity = ctx.partial_nnf_ctx(c)
+        self.assertEqual(result, ctx.Always(ctx.Hole(), (1, 5)))
+        self.assertFalse(polarity)
+
+    def test_not_always_becomes_eventually(self) -> None:
+        c = ctx.Not(ctx.Always(ctx.Hole(), (0, 2)))
+        result, polarity = ctx.partial_nnf_ctx(c)
+        self.assertEqual(result, ctx.Eventually(ctx.Hole(), (0, 2)))
+        self.assertFalse(polarity)
+
+
+class TestPartialNNFAdditional(unittest.TestCase):
+    """Cover partial_nnf paths not exercised by TestPartialNNF."""
+
+    def test_positive_polarity_returns_subformula_unchanged(self) -> None:
+        subformula = parser.parse_mtl("F[0,3] a")
+        assert isinstance(subformula, mtl.Temporal)
+        result_ctx, result_subf = ctx.partial_nnf(ctx.Hole(), subformula)
+        self.assertEqual(result_ctx, ctx.Hole())
+        self.assertEqual(result_subf, subformula)
+
+    def test_negative_polarity_until_becomes_release(self) -> None:
+        subformula = parser.parse_mtl("a U[1,4] b")
+        assert isinstance(subformula, mtl.Temporal)
+        _result_ctx, result_subf = ctx.partial_nnf(
+            ctx.Not(ctx.Hole()),
+            subformula,
+        )
+        expected = mtl.Release(
+            mtl.Not(mtl.Prop("a")),
+            mtl.Not(mtl.Prop("b")),
+            (1, 4),
+        )
+        self.assertEqual(result_subf, expected)
+
+    def test_negative_polarity_release_becomes_until(self) -> None:
+        subformula = parser.parse_mtl("a R[1,4] b")
+        assert isinstance(subformula, mtl.Temporal)
+        _result_ctx, result_subf = ctx.partial_nnf(
+            ctx.Not(ctx.Hole()),
+            subformula,
+        )
+        expected = mtl.Until(
+            mtl.Not(mtl.Prop("a")),
+            mtl.Not(mtl.Prop("b")),
+            (1, 4),
+        )
+        self.assertEqual(result_subf, expected)
+
+    def test_negative_polarity_eventually_becomes_always(self) -> None:
+        subformula = parser.parse_mtl("F[2,5] a")
+        assert isinstance(subformula, mtl.Temporal)
+        _result_ctx, result_subf = ctx.partial_nnf(
+            ctx.Not(ctx.Hole()),
+            subformula,
+        )
+        expected = mtl.Always(mtl.Not(mtl.Prop("a")), (2, 5))
+        self.assertEqual(result_subf, expected)
+
+
 if __name__ == "__main__":
     unittest.main()
