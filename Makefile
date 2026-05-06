@@ -1,4 +1,4 @@
-.PHONY: test unittest expect_test fmt fmt-ci lint ruff pylint mypy bandit doc coverage coverage-html
+.PHONY: test unittest expect_test fmt fmt-ci lint ruff pylint mypy bandit doc coverage coverage-html badge
 
 all: fmt lint test
 
@@ -16,6 +16,7 @@ coverage:
 	done
 	coverage combine
 	coverage report -m
+	coverage-badge -q -f -o docs/coverage.svg
 
 coverage-html:
 	coverage erase
@@ -26,6 +27,7 @@ coverage-html:
 	done
 	coverage combine
 	coverage html
+	coverage-badge -q -f -o docs/coverage.svg
 	@echo "Open htmlcov/index.html to view the coverage report."
 
 EXPECT_TESTS := $(wildcard tests/test_*.exp)
@@ -36,6 +38,9 @@ expect_test:
 		expect -- $$t || { echo "Test $$t FAILED"; exit 1; }; \
 	done
 	@echo "All expect tests passed!"
+
+badge:
+	coverage-badge -q -f -o docs/coverage.svg
 
 fmt:
 	python3 -m black -l 80 .
