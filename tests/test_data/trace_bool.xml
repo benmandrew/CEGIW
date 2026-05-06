@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<counter-example type="0" id="1" desc="BMC Counterexample" >
+    <node>
+        <state id='1'>
+            <value variable="a">FALSE</value>
+        </state>
+    </node>
+    <node>
+        <state id='2'>
+            <value variable="a">FALSE</value>
+        </state>
+    </node>
+    <node>
+        <state id='3'>
+            <value variable="a">FALSE</value>
+        </state>
+    </node>
+    <node>
+        <state id='4'>
+            <value variable="a">TRUE</value>
+        </state>
+    </node>
+    <node>
+        <state id='5'>
+            <value variable="a">TRUE</value>
+        </state>
+    </node>
+    <loops> 0 </loops>
+</counter-example>

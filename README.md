@@ -1,5 +1,7 @@
 # Counterexample-Guided Interval Weakening (CEGIW)
 
+![Coverage](docs/coverage.svg)
+
 This project takes an ideal property in Metric Temporal Logic (MTL) that does not hold in the system, and weakens it by modifying the intervals of the temporal operators such that it either does hold, or deduces that no possible weakening exists.
 
 You can run the the interval weakening algorithm on the included examples yourself by running

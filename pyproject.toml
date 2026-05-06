@@ -54,6 +54,10 @@ disable = [
     "too-many-positional-arguments"
 ]
 
+[tool.coverage.run]
+source = ["src"]
+parallel = true
+
 [[tool.mypy.overrides]]
 module = ["timeout_decorator.*", "sh.*"]
 ignore_missing_imports = true

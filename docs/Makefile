@@ -7,14 +7,17 @@ APIDOCDIR := $(SOURCEDIR)/_api
 SOURCEPKG := ../src
 
 apidoc:
-	sphinx-apidoc -f -e -o $(APIDOCDIR) $(SOURCEPKG)
-	for f in $(APIDOCDIR)/*.rst; do \
+	$(call log,Generating API documentation)
+	@sphinx-apidoc -f -e -o $(APIDOCDIR) $(SOURCEPKG)
+	@for f in $(APIDOCDIR)/*.rst; do \
 		sed '1s/^src\.//' "$$f" > "$$f.tmp" && mv "$$f.tmp" "$$f"; \
 	done
-	rm -f $(APIDOCDIR)/modules.rst $(APIDOCDIR)/src.rst
+	@rm -f $(APIDOCDIR)/modules.rst $(APIDOCDIR)/src.rst
 
 html: apidoc
-	$(SPHINXBUILD) -W -b html $(SOURCEDIR) $(BUILDDIR)/html
+	$(call log,Building HTML documentation)
+	@$(SPHINXBUILD) -W -b html $(SOURCEDIR) $(BUILDDIR)/html
 
 clean:
-	rm -rf $(BUILDDIR)
+	$(call log,Cleaning build artifacts)
+	@rm -rf $(BUILDDIR)
