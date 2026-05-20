@@ -2,7 +2,9 @@
 
 ![Coverage](docs/coverage.svg)
 
-This project takes an ideal property in Metric Temporal Logic (MTL) that does not hold in the system, and weakens it by modifying the intervals of the temporal operators such that it either does hold, or deduces that no possible weakening exists.
+This project takes an ideal property in Metric Temporal Logic (MTL) that does not hold in the system, and either
+- weakens it by modifying the intervals of the temporal operators such that it does hold,
+- or deduces that no possible weakening exists.
 
 You can run the the interval weakening algorithm on the included examples yourself by running
 
@@ -70,6 +72,8 @@ G ((a -> (b || X ((b || X (b))))))
 $ make fmt
 # Lint
 $ make lint
+# Build documentation
+$ make doc
 # Run tests
 $ make test
 ```
