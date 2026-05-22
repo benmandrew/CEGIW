@@ -1,8 +1,12 @@
 # Counterexample-Guided Interval Weakening (CEGIW)
 
+> B.M. Andrew, L.A. Dennis, M. Fisher, and M. Farrell. *Counterexample-Guided Interval Weakening*. Rigorous State-Based Methods (ABZ) 2026.
+
+[![DOI:10.1007/978-3-032-26752-8_1](https://img.shields.io/badge/DOI-10.1007%2F978.3.032.26752.8.1-82A9C8)](https://doi.org/10.1007/978-3-032-26752-8_1)
 ![Coverage](docs/coverage.svg)
 
-This project takes an ideal property in Metric Temporal Logic (MTL) that does not hold in the system, and either
+This tool takes an ideal property in Metric Temporal Logic (MTL) that does not hold in the system, and either
+
 - weakens it by modifying the intervals of the temporal operators such that it does hold,
 - or deduces that no possible weakening exists.
 
@@ -21,13 +25,15 @@ $ pip install -r dev-requirements.txt
 $ python3 -m src.iterative_weaken --model models/foraging-robots-limit-search.smv --de-bruijn 0,1 --mtl 'G(resting_p -> F[1,3](resting_p))'
 ```
 
-Note that the De Bruijn index ([wikipedia](https://en.wikipedia.org/wiki/De_Bruijn_index)) specifies which interval in the formula is to be weakened.
+Note that the [De Bruijn index](https://en.wikipedia.org/wiki/De_Bruijn_index) specifies which interval in the formula is to be weakened.
 
 ## Artefacts
 
-The [artefacts](artefacts/) directory contains full proofs of correctness and optimality, as well as input data for the interval-weakenable requirements in FRET case studies.
+The [artefacts](artefacts/) directory contains the [preprint](artefacts/preprint.pdf), [full proofs](artefacts/proofs.pdf) of correctness and optimality, and [input data](artefacts/requirements/) for the interval-weakenable requirements in FRET case studies.
 
 ## Tools
+
+CEGIW provides several commandline tools.
 
 ### `iterative_weaken.py`
 
@@ -65,7 +71,11 @@ $ python3 -m src.mtl2ltlspec --model-checker NUXMV --mtl 'G(a -> F[0,2](b))'
 G ((a -> (b || X ((b || X (b))))))
 ```
 
-### Tests and linting
+## Documentation
+
+Code documentation can be found at https://benmandrew.com/docs/cegiw/.
+
+## Tests and linting
 
 ```bash
 # Format
