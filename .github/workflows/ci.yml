@@ -11,108 +11,54 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.13"
-
-      - name: Install black
-        run: |
-          python -m pip install --upgrade pip
-          pip install -c dev-requirements.txt black
-
+      - uses: ./.github/actions/setup-nix
       - name: Run black (check only)
-        run: make fmt-ci
+        run: nix develop -c make fmt-ci
 
   ruff:
     name: Lint (ruff)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.13"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r dev-requirements.txt
-
+      - uses: ./.github/actions/setup-nix
       - name: Run ruff
-        run: make ruff
+        run: nix develop -c make ruff
 
   pylint:
     name: Lint (pylint)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.13"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r dev-requirements.txt
-
+      - uses: ./.github/actions/setup-nix
       - name: Run pylint
-        run: make pylint
+        run: nix develop -c make pylint
 
   mypy:
     name: Lint (mypy)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.13"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r dev-requirements.txt
-
+      - uses: ./.github/actions/setup-nix
       - name: Run mypy
-        run: make mypy
+        run: nix develop -c make mypy
 
   bandit:
     name: Security Check (bandit)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.13"
-
-      - name: Install bandit
-        run: |
-          python -m pip install --upgrade pip
-          pip install -c dev-requirements.txt bandit
-
+      - uses: ./.github/actions/setup-nix
       - name: Run bandit
-        run: make bandit
+        run: nix develop -c make bandit
 
   docs:
     name: Build Documentation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.13"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r dev-requirements.txt
-
+      - uses: ./.github/actions/setup-nix
       - name: Build documentation
-        run: make docs
+        run: nix develop -c make docs
 
   test:
     name: Tests
@@ -123,24 +69,13 @@ jobs:
       COLUMNS: 200
     steps:
       - uses: actions/checkout@v6
-
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.13"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r dev-requirements.txt
-          sudo apt-get update && sudo apt-get install -y expect
+      - uses: ./.github/actions/setup-nix
 
       - name: Run unittest
-        run: |
-          make unittest
+        run: nix develop -c make unittest
 
       - name: Run expect tests
-        run: |
-          make expect_test
+        run: nix develop -c make expect_test
 
   docker:
     name: Push Docker Image (${{ matrix.name }})

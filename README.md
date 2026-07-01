@@ -16,16 +16,31 @@ You can run the the interval weakening algorithm on the included examples yourse
 $ docker run benmandrew/cegiw
 ```
 
-Or set up and run locally, making sure you have `nuXmv 2.1.0` installed, with
+Or set up and run locally with [Nix](#development-environment):
+
+```bash
+$ nix develop -c python3 -m src.iterative_weaken --model models/foraging-robots-limit-search.smv --de-bruijn 0,1 --mtl 'G(resting_p -> F[1,3](resting_p))'
+```
+
+Note that the [De Bruijn index](https://en.wikipedia.org/wiki/De_Bruijn_index) specifies which interval in the formula is to be weakened.
+
+## Development Environment
+
+This repository provides a [Nix](https://nixos.org/) flake with a `devShell` supplying every tool the build needs: Python 3.13, `nuXmv 2.1.0`, SPIN, GCC, and `expect`. Enter it with:
+
+```bash
+$ nix develop
+```
+
+The first time you enter the shell it creates a `.venv` and installs the pinned Python dependencies from `dev-requirements.txt`. All commands below (`make fmt`, `make lint`, `make test`, `make docs`, `./case-studies.sh`) are run from inside this shell, e.g. `nix develop -c make test`.
+
+If you'd rather not use Nix, install `nuXmv 2.1.0`, SPIN, and GCC yourself, then set up the Python environment directly:
 
 ```bash
 $ python3 -m venv .venv
 $ source .venv/bin/activate
 $ pip install -r dev-requirements.txt
-$ python3 -m src.iterative_weaken --model models/foraging-robots-limit-search.smv --de-bruijn 0,1 --mtl 'G(resting_p -> F[1,3](resting_p))'
 ```
-
-Note that the [De Bruijn index](https://en.wikipedia.org/wiki/De_Bruijn_index) specifies which interval in the formula is to be weakened.
 
 ## Artefacts
 
@@ -77,13 +92,15 @@ Code documentation can be found at https://benmandrew.com/docs/cegiw/.
 
 ## Tests and linting
 
+Run these from inside the [Nix devShell](#development-environment) (`nix develop`, or prefix each command with `nix develop -c`):
+
 ```bash
 # Format
 $ make fmt
 # Lint
 $ make lint
 # Build documentation
-$ make doc
+$ make docs
 # Run tests
 $ make test
 ```

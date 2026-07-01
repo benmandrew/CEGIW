@@ -1,9 +1,9 @@
 # Sphinx Docs
 
-Build HTML documentation from the repository root with:
+Build HTML documentation from the repository root, inside the [Nix devShell](../README.md#development-environment), with:
 
 ```bash
-make docs
+$ nix develop -c make docs
 ```
 
 Output is written to `docs/build/html/index.html`.
