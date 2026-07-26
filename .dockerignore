@@ -3,3 +3,11 @@
 !models/
 !case-studies.sh
 !requirements.txt
+
+# `!src/` above un-ignores everything beneath it, which swept a host
+# src/__pycache__ into the image -- .pyc files built by whatever Python is
+# installed locally, not the 3.12 the image runs. Harmless (mismatched magic
+# numbers are ignored, and PYTHONDONTWRITEBYTECODE stops new ones) but dead
+# weight. Re-excluded here, after the negations, so this wins.
+**/__pycache__/
+**/*.py[cod]

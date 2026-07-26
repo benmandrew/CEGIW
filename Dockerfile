@@ -19,9 +19,20 @@ RUN apt-get update \
 	&& apt-get clean \
 	&& rm -rf /var/lib/apt/lists/*
 
-COPY . /app/
+# Manifest first, then the dependency layer, then the source. Copying everything up
+# front made any edit under src/ invalidate the pip layer and reinstall the whole
+# requirements set on every build.
+COPY requirements.txt /app/
 
 RUN pip install --upgrade pip setuptools wheel \
 	&& pip install --no-cache-dir -r requirements.txt
+
+COPY . /app/
+
+# Runs unprivileged. The case studies stream their results to stdout and write
+# nothing to disk, so /app and /opt/nuXmv stay root-owned and read-only from here
+# (PYTHONDONTWRITEBYTECODE above already keeps Python from wanting to write .pyc).
+RUN useradd --system --no-create-home --shell /usr/sbin/nologin cegiw
+USER cegiw
 
 ENTRYPOINT ["./case-studies.sh"]
